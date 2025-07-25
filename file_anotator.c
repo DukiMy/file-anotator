@@ -47,17 +47,6 @@ int main(int argc, char *argv[]) {
  * Checks for valid arguments, exits the program if none are provided.
  */
 int check_args(const int argc, char *argv[], char **input_path, char **output_path) {
-  
-  /* Hinders any further execution if no args are provided. */
-  if (argc == 1) {
-    fprintf(stderr, "Missing input, output or both.\n");
-    printf("You need to provide arguments with the flags '-i' and '-o'.\n");
-    exit(EXIT_FAILURE);
-  }
-
-  /*
-   * Searches for the option flags, exits if none are provided.
-   */
   int opt;
   while ((opt = getopt(argc, argv, "i:o:?")) != -1) {
     switch (opt) {
@@ -89,42 +78,38 @@ int check_args(const int argc, char *argv[], char **input_path, char **output_pa
     }
   }
 
-  if (!input_path || !output_path) {
-    fprintf(stderr, "Missing input, output or both.\n");
-    exit(EXIT_FAILURE);
-  }
   return 0;
 }
 
-int prepend(const char *filepath, const char *prepend_text) {
-  FILE *original = fopen(filepath, "rb"); /* "rb" makes it readonly, it opens the file which is meant be prepended. */
-  if (!original) return 1;                /* returns with an error if the file does not exist */
-
-  /* Getting the size of the file */
-  fseek(original, 0, SEEK_END);
-  long file_size = ftell(original);
-  rewind(original);
-
-  /* Getting the length of the text that is to be prepended */
-  size_t prepend_len = strlen(prepend_text);
-  char *buffer = malloc(prepend_len + file_size + 1);
-  if (!buffer) return 2;
-
-  memcpy(buffer, prepend_text,  prepend_len);
-  fread(buffer + prepend_len, 1, file_size, original);
-  buffer[prepend_len + file_size] = '\0';
-  char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, buffer, &prepend_len);
-
-  fclose(original);
-
-  FILE *out = fopen(filepath, "wb");
-  if (!out) return 3;
-  fwrite(boxed_text_buffer, 1, prepend_len + file_size, out);
-  fclose(out);
-  free(buffer);
-
-  return 0;
-}
+// int prepend(const char *filepath, const char *prepend_text) {
+//   FILE *original = fopen(filepath, "rb"); /* "rb" makes it readonly, it opens the file which is meant be prepended. */
+//   if (!original) return 1;                /* returns with an error if the file does not exist */
+//
+//   /* Getting the size of the file */
+//   fseek(original, 0, SEEK_END);
+//   long file_size = ftell(original);
+//   rewind(original);
+//
+//   /* Getting the length of the text that is to be prepended */
+//   size_t prepend_len = strlen(prepend_text);
+//   char *buffer = malloc(prepend_len + file_size + 1);
+//   if (!buffer) return 2;
+//
+//   memcpy(buffer, prepend_text,  prepend_len);
+//   fread(buffer + prepend_len, 1, file_size, original);
+//   buffer[prepend_len + file_size] = '\0';
+//   char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, buffer, &prepend_len);
+//
+//   fclose(original);
+//
+//   FILE *out = fopen(filepath, "wb");
+//   if (!out) return 3;
+//   fwrite(boxed_text_buffer, 1, prepend_len + file_size, out);
+//   fclose(out);
+//   free(buffer);
+//
+//   return 0;
+// }
 
 int box_from_file(char *input_path, char *output_path) {
   FILE *input_stream = fopen(input_path, "rb");
