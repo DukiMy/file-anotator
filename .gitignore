@@ -1,4 +1,5 @@
 *.h
 *.out
 *.o
+*.log
 README.txt
