@@ -1,0 +1,18 @@
+session_name: file_anotator
+start_directory: ~/c-code/file-anotator
+
+windows:
+  - window_name: dev, build and debug
+    layout: main-horizontal
+    panes:
+      - shell_command:
+          - echo "pane 1 nvim"
+          - nvim ~/c-code/file-anotator/file_anotator.c
+      - shell_command:
+          - echo "pane 2 build terminal" 
+          - tmux resize-pane -t  file_anotator:0.1 -y 10
+          - tmux set-option -t file_anotator status-style "bg=#262626,fg=#b2b2b2"
+      - shell_command:
+          - echo "pane 3 Debug terminal"
+          - gdb ~/c-code/file-anotator/file_anotator.out
+
