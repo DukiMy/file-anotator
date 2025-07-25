@@ -18,14 +18,12 @@
 #define NEW_LINE '\n'
 #define NULL_TERM '\0'
 #define TAB '\t'
-#define INPUT_FLAG "-i"
-#define OUTPUT_FLAG "-o"
 #define SUCCESS 0
 
 /* Declarting methods */
-void get_dims(const char *str, size_t *width, size_t *rows);
-void horizontal_border(size_t width, char symb, char **write_head);
-void body(size_t width, const char **input_buffer, char **write_head);
+int get_dims(const char *str, size_t *width, size_t *rows);
+int horizontal_border(size_t width, char symb, char **write_head);
+int body(size_t width, const char **input_buffer, char **write_head);
 char *boxed_text(char symb, const char *input_buffer, size_t *fsize);
 int prepend(const char *filepath, const char *prepend_text);
 int box_from_file(char *input_path, char * output_path);
@@ -44,11 +42,12 @@ int main(int argc, char *argv[]) {
 }
 
 /*
- * Checks for valid arguments, exits the program if none are provided.
+ * Checks for valid arguments, exits the program if it fails.
  */
 int check_args(const int argc, char *argv[], char **input_path, char **output_path) {
   int opt;
-  while ((opt = getopt(argc, argv, "i:o:?")) != -1) {
+  while ((opt = getopt(argc, argv, "i:o:?:h")) != -1) {
+    
     switch (opt) {
       case 'i':
         if (!optarg) {
@@ -61,6 +60,7 @@ int check_args(const int argc, char *argv[], char **input_path, char **output_pa
         }
         *input_path = optarg;
         break;
+
       case 'o':
         if (!optarg) {
           fprintf(stderr, "The invalid output argument provided was '%s'\n", optarg);
@@ -72,9 +72,14 @@ int check_args(const int argc, char *argv[], char **input_path, char **output_pa
         }
         *output_path = optarg;
         break;
+
       case '?':
+      case 'h':
         printf("Usage:\n  ./file_anotator.out -i <input_file_path> -o <output_file_path>\n");
         exit(EXIT_SUCCESS);
+
+      default:
+        fprintf(stderr, "The argument '%s' was not recognized.\nUse help flags '-h' or '-?'.", optarg);
     }
   }
 
@@ -131,26 +136,28 @@ int box_from_file(char *input_path, char *output_path) {
 
   return SUCCESS;
 }
-
-int box_from_string_to_stdo(char string[]) {
-  FILE *input_stream = fopen("stringlib.c", "rb");
-  fseek(input_stream, 0, SEEK_END);
-  size_t fsize = ftell(input_stream);
-  rewind(input_stream);
-
-  char *input_buffer = malloc(fsize + 1);
-  fread(input_buffer, 1, fsize, input_stream);
-  fclose(input_stream);
-
-  input_buffer[fsize] = '\0';
-  char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, input_buffer, &fsize);
-  free(input_buffer);
-  FILE *output_stream = fopen("output.txt", "wb");
-  fwrite(boxed_text_buffer, 1, fsize, output_stream);
-  fclose(output_stream);
-  free(boxed_text_buffer);
-}
-
+//
+// int box_from_string_to_stdo(char string[]) {
+//   FILE *input_stream = fopen("stringlib.c", "rb");
+//   fseek(input_stream, 0, SEEK_END);
+//   size_t fsize = ftell(input_stream);
+//   rewind(input_stream);
+//
+//   char *input_buffer = malloc(fsize + 1);
+//   fread(input_buffer, 1, fsize, input_stream);
+//   fclose(input_stream);
+//
+//   input_buffer[fsize] = '\0';
+//   char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, input_buffer, &fsize);
+//   free(input_buffer);
+//   FILE *output_stream = fopen("output.txt", "wb");
+//   fwrite(boxed_text_buffer, 1, fsize, output_stream);
+//   fclose(output_stream);
+//   free(boxed_text_buffer);
+//
+//   return 0;
+// }
+//
 char *boxed_text(char symb, const char *input_buffer, size_t *fsize) {
   size_t width, rows;
 
@@ -166,10 +173,11 @@ char *boxed_text(char symb, const char *input_buffer, size_t *fsize) {
 
   *write_head = NULL_TERM;
   *fsize = write_head - buffer;
+
   return buffer;
 }
 
-void get_dims(const char *str, size_t *width, size_t *rows) {
+int get_dims(const char *str, size_t *width, size_t *rows) {
   *width = 0;
   *rows = 0;
   size_t current = 0;
@@ -185,18 +193,22 @@ void get_dims(const char *str, size_t *width, size_t *rows) {
     }
   }
   if (current > *width) *width = current;
+
+  return 0;
 }
 
-void horizontal_border(size_t width, char symb, char **write_head) {
+int horizontal_border(size_t width, char symb, char **write_head) {
   size_t i;
 
   *(*write_head)++ = CORNERS;
   for (i = 0; i < width; i++) *(*write_head)++ = symb;
   *(*write_head)++ = CORNERS;
   *(*write_head)++ = NEW_LINE;
+
+  return 0;
 }
 
-void body(size_t width, const char **input_buffer, char **write_head) {
+int body(size_t width, const char **input_buffer, char **write_head) {
   const char *reader = *input_buffer;
   size_t col_count = 0;
 
@@ -228,4 +240,6 @@ void body(size_t width, const char **input_buffer, char **write_head) {
     *(*write_head)++ = VERTICAL_WALLS;
     *(*write_head)++ = NEW_LINE;
   }
+
+  return 0;
 }
