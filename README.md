@@ -1,2 +1,3 @@
 # File anotator
-    ## Description
+## Description
+ - Appends a block of text to a file.
