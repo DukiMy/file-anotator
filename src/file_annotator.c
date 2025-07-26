@@ -1,7 +1,11 @@
-/* This program annotates files with basic info regarding its creator, date of creation
- * and the time it was last changed.
+/**
+ * @file file_annotator
+ * @brief Main source file for annotating files with metadata.
+ * @author Durim Miziraj
+ * @date 2025-07-26
  *
- * Created by Durim Miziraj
+ * This file implements the main logic for reading, modifying,
+ * and writing annotated text files.
  */
 
 /* Imports */
@@ -26,69 +30,91 @@ int horizontal_border(size_t width, char symb, char **write_head);
 int body(size_t width, const char **input_buffer, char **write_head);
 char *boxed_text(char symb, const char *input_buffer, size_t *fsize);
 int prepend(const char *filepath, const char *prepend_text);
-int box_from_file(char *input_path, char * output_path);
-int check_args(int argc,  char *argv[], char **input_path, char **output_path);
+int box_from_file(char *input, char * output);
+int check_args(int argc,  char *argv[], char **input, char **output);
 int main(int argc, char *argv[]);
 
 /* The programs main entry point */
 int main(int argc, char *argv[]) {
-  char *input_path;
-  char *output_path;
+  char *input;
+  char *output;
 
-  check_args(argc, argv, &input_path, &output_path);
-  box_from_file(input_path, output_path);
+  check_args(argc, argv, &input, &output);
+  box_from_file(input, output);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 /*
  * Checks for valid arguments, exits the program if it fails.
  */
-int check_args(const int argc, char *argv[], char **input_path, char **output_path) {
+int check_args(const int argc, char *argv[], char **input, char **output) {
   int opt;
   while ((opt = getopt(argc, argv, "i:o:?:h")) != -1) {
     
     switch (opt) {
       case 'i':
         if (!optarg) {
-          fprintf(stderr, "The invalid input argument provided was '%s'\n", optarg);
+          fprintf(
+            stderr,
+            "The invalid input argument provided was '%s'\n",
+            optarg
+          );
           exit(EXIT_FAILURE);
         }
         if (access(optarg, F_OK) != 0) {
-          fprintf(stderr, "The input file '%s' could not be found.\n", optarg);
+          fprintf(
+            stderr,
+            "The input file '%s' could not be found.\n",
+            optarg
+          );
           exit(EXIT_FAILURE);
         }
-        *input_path = optarg;
+        *input = optarg;
         break;
 
       case 'o':
         if (!optarg) {
-          fprintf(stderr, "The invalid output argument provided was '%s'\n", optarg);
+          fprintf(
+            stderr,
+            "The invalid output argument provided was '%s'\n",
+            optarg
+          );
           exit(EXIT_FAILURE);
         }
         if (access(optarg, F_OK) != 0) {
-          fprintf(stderr, "The output file '%s' could not be found.\n", optarg);
+          fprintf(
+            stderr,
+            "The output file '%s' could not be found.\n",
+            optarg
+          );
           exit(EXIT_FAILURE);
         }
-        *output_path = optarg;
+        *output = optarg;
         break;
 
-      case '?':
-      case 'h':
-        printf("Usage:\n  ./file_anotator.out -i <input_file_path> -o <output_file_path>\n");
+      case '?': case 'h':
+        printf(
+          "Usage:\n  ./file_anotator.out -i <input_file_path> -o <output_file_path>\n"
+        );
         exit(EXIT_SUCCESS);
 
       default:
-        fprintf(stderr, "The argument '%s' was not recognized.\nUse help flags '-h' or '-?'.", optarg);
+        fprintf(
+          stderr,
+          "Argument '%s' was not recognized.\nUse flags '-h' or '-?'.",
+          optarg
+        );
+        exit(EXIT_FAILURE);
     }
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 // int prepend(const char *filepath, const char *prepend_text) {
 //   FILE *original = fopen(filepath, "rb"); /* "rb" makes it readonly, it opens the file which is meant be prepended. */
-//   if (!original) return 1;                /* returns with an error if the file does not exist */
+//   if (!original) return EXIT_FAILURE;                /* returns with an error if the file does not exist */
 //
 //   /* Getting the size of the file */
 //   fseek(original, 0, SEEK_END);
@@ -113,11 +139,12 @@ int check_args(const int argc, char *argv[], char **input_path, char **output_pa
 //   fclose(out);
 //   free(buffer);
 //
-//   return 0;
+//   return EXIT_SUCCESS;
 // }
 
-int box_from_file(char *input_path, char *output_path) {
-  FILE *input_stream = fopen(input_path, "rb");
+
+int box_from_file(char *input, char *output) {
+  FILE *input_stream = fopen(input, "rb");
   fseek(input_stream, 0, SEEK_END);
   size_t fsize = ftell(input_stream);
   rewind(input_stream);
@@ -126,17 +153,17 @@ int box_from_file(char *input_path, char *output_path) {
   fread(input_buffer, 1, fsize, input_stream);
   fclose(input_stream);
 
-  input_buffer[fsize] = '\0';
+  input_buffer[fsize] = NULL_TERM;
   char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, input_buffer, &fsize);
   free(input_buffer);
-  FILE *output_stream = fopen(output_path, "wb");
+  FILE *output_stream = fopen(output, "wb");
   fwrite(boxed_text_buffer, 1, fsize, output_stream);
   fclose(output_stream);
   free(boxed_text_buffer);
 
   return SUCCESS;
 }
-//
+
 // int box_from_string_to_stdo(char string[]) {
 //   FILE *input_stream = fopen("stringlib.c", "rb");
 //   fseek(input_stream, 0, SEEK_END);
@@ -155,9 +182,9 @@ int box_from_file(char *input_path, char *output_path) {
 //   fclose(output_stream);
 //   free(boxed_text_buffer);
 //
-//   return 0;
+//   return EXIT_SUCCESS;
 // }
-//
+
 char *boxed_text(char symb, const char *input_buffer, size_t *fsize) {
   size_t width, rows;
 
@@ -194,7 +221,7 @@ int get_dims(const char *str, size_t *width, size_t *rows) {
   }
   if (current > *width) *width = current;
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 int horizontal_border(size_t width, char symb, char **write_head) {
@@ -205,7 +232,7 @@ int horizontal_border(size_t width, char symb, char **write_head) {
   *(*write_head)++ = CORNERS;
   *(*write_head)++ = NEW_LINE;
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 int body(size_t width, const char **input_buffer, char **write_head) {
@@ -241,5 +268,5 @@ int body(size_t width, const char **input_buffer, char **write_head) {
     *(*write_head)++ = NEW_LINE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

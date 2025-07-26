@@ -3,3 +3,5 @@
 *.o
 *.log
 README.txt
+.doxyfile
+/bin/
