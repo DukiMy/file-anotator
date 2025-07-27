@@ -16,31 +16,47 @@
 #include <time.h>
 
 /* Pre-defined constants */
-#define CORNERS '+'
-#define HORIZONTAL_WALLS '-'
-#define VERTICAL_WALLS '|'
 #define NEW_LINE '\n'
 #define NULL_TERM '\0'
-#define TAB '\t'
-#define SUCCESS 0
+
+typedef struct IO_file_path {
+  char *input_file_path;
+  char *output_file_path;
+} IO_file_path;
+
+typedef struct box_char {
+  const char CORNER;
+  const char VERT_WALL;
+  const char HOR_WALL;
+} box_char;
+
+static const box_char BOX_CHAR = { 
+  '+',  /* CORNER     */
+  '|',  /* VERT_WALL  */
+  '-'   /* HOR_WALL   */
+};
 
 /* Declarting methods */
 int get_dims(const char *str, size_t *width, size_t *rows);
-int horizontal_border(size_t width, char symb, char **write_head);
+int horizontal_border(size_t width, char **write_head);
 int body(size_t width, const char **input_buffer, char **write_head);
-char *boxed_text(char symb, const char *input_buffer, size_t *fsize);
+char *boxed_text(const char *input_buffer, size_t *fsize);
 int prepend(const char *filepath, const char *prepend_text);
-int box_from_file(char *input, char * output);
-int check_args(int argc,  char *argv[], char **input, char **output);
+int box_from_file(IO_file_path *file_path);
+void assign_file_path(int argc,  char *argv[], IO_file_path *file_path);
 int main(int argc, char *argv[]);
+
+
 
 /* The programs main entry point */
 int main(int argc, char *argv[]) {
-  char *input;
-  char *output;
+  IO_file_path file_path = {
+    .input_file_path = "null",
+    .output_file_path = "null"
+  };
 
-  check_args(argc, argv, &input, &output);
-  box_from_file(input, output);
+  assign_file_path(argc, argv, &file_path);
+  box_from_file(&file_path);
 
   return EXIT_SUCCESS;
 }
@@ -48,10 +64,10 @@ int main(int argc, char *argv[]) {
 /*
  * Checks for valid arguments, exits the program if it fails.
  */
-int check_args(const int argc, char *argv[], char **input, char **output) {
-  int opt;
+void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
+  char opt;
   while ((opt = getopt(argc, argv, "i:o:?:h")) != -1) {
-    
+
     switch (opt) {
       case 'i':
         if (!optarg) {
@@ -70,7 +86,7 @@ int check_args(const int argc, char *argv[], char **input, char **output) {
           );
           exit(EXIT_FAILURE);
         }
-        *input = optarg;
+        file_path->input_file_path = optarg;
         break;
 
       case 'o':
@@ -90,7 +106,7 @@ int check_args(const int argc, char *argv[], char **input, char **output) {
           );
           exit(EXIT_FAILURE);
         }
-        *output = optarg;
+        file_path->output_file_path = optarg;
         break;
 
       case '?': case 'h':
@@ -108,43 +124,10 @@ int check_args(const int argc, char *argv[], char **input, char **output) {
         exit(EXIT_FAILURE);
     }
   }
-
-  return EXIT_SUCCESS;
 }
 
-// int prepend(const char *filepath, const char *prepend_text) {
-//   FILE *original = fopen(filepath, "rb"); /* "rb" makes it readonly, it opens the file which is meant be prepended. */
-//   if (!original) return EXIT_FAILURE;                /* returns with an error if the file does not exist */
-//
-//   /* Getting the size of the file */
-//   fseek(original, 0, SEEK_END);
-//   long file_size = ftell(original);
-//   rewind(original);
-//
-//   /* Getting the length of the text that is to be prepended */
-//   size_t prepend_len = strlen(prepend_text);
-//   char *buffer = malloc(prepend_len + file_size + 1);
-//   if (!buffer) return 2;
-//
-//   memcpy(buffer, prepend_text,  prepend_len);
-//   fread(buffer + prepend_len, 1, file_size, original);
-//   buffer[prepend_len + file_size] = '\0';
-//   char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, buffer, &prepend_len);
-//
-//   fclose(original);
-//
-//   FILE *out = fopen(filepath, "wb");
-//   if (!out) return 3;
-//   fwrite(boxed_text_buffer, 1, prepend_len + file_size, out);
-//   fclose(out);
-//   free(buffer);
-//
-//   return EXIT_SUCCESS;
-// }
-
-
-int box_from_file(char *input, char *output) {
-  FILE *input_stream = fopen(input, "rb");
+int box_from_file(IO_file_path *file_path) {
+  FILE *input_stream = fopen(file_path->input_file_path, "rb");
   fseek(input_stream, 0, SEEK_END);
   size_t fsize = ftell(input_stream);
   rewind(input_stream);
@@ -154,38 +137,18 @@ int box_from_file(char *input, char *output) {
   fclose(input_stream);
 
   input_buffer[fsize] = NULL_TERM;
-  char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, input_buffer, &fsize);
+  char *boxed_text_buffer = boxed_text(input_buffer, &fsize);
   free(input_buffer);
-  FILE *output_stream = fopen(output, "wb");
+
+  FILE *output_stream = fopen(file_path->output_file_path, "wb");
   fwrite(boxed_text_buffer, 1, fsize, output_stream);
   fclose(output_stream);
   free(boxed_text_buffer);
 
-  return SUCCESS;
+  return EXIT_SUCCESS;
 }
 
-// int box_from_string_to_stdo(char string[]) {
-//   FILE *input_stream = fopen("stringlib.c", "rb");
-//   fseek(input_stream, 0, SEEK_END);
-//   size_t fsize = ftell(input_stream);
-//   rewind(input_stream);
-//
-//   char *input_buffer = malloc(fsize + 1);
-//   fread(input_buffer, 1, fsize, input_stream);
-//   fclose(input_stream);
-//
-//   input_buffer[fsize] = '\0';
-//   char *boxed_text_buffer = boxed_text(HORIZONTAL_WALLS, input_buffer, &fsize);
-//   free(input_buffer);
-//   FILE *output_stream = fopen("output.txt", "wb");
-//   fwrite(boxed_text_buffer, 1, fsize, output_stream);
-//   fclose(output_stream);
-//   free(boxed_text_buffer);
-//
-//   return EXIT_SUCCESS;
-// }
-
-char *boxed_text(char symb, const char *input_buffer, size_t *fsize) {
+char *boxed_text(const char *input_buffer, size_t *fsize) {
   size_t width, rows;
 
   get_dims(input_buffer, &width, &rows);
@@ -194,9 +157,9 @@ char *boxed_text(char symb, const char *input_buffer, size_t *fsize) {
   char *buffer = malloc(*fsize);
   char *write_head = buffer;
 
-  horizontal_border(width, symb, &write_head);
+  horizontal_border(width, &write_head);
   body(width, &input_buffer, &write_head);
-  horizontal_border(width, symb, &write_head);
+  horizontal_border(width, &write_head);
 
   *write_head = NULL_TERM;
   *fsize = write_head - buffer;
@@ -224,12 +187,12 @@ int get_dims(const char *str, size_t *width, size_t *rows) {
   return EXIT_SUCCESS;
 }
 
-int horizontal_border(size_t width, char symb, char **write_head) {
+int horizontal_border(size_t width, char **write_head) {
   size_t i;
 
-  *(*write_head)++ = CORNERS;
-  for (i = 0; i < width; i++) *(*write_head)++ = symb;
-  *(*write_head)++ = CORNERS;
+  *(*write_head)++ = BOX_CHAR.CORNER;
+  for (i = 0; i < width; i++) *(*write_head)++ = BOX_CHAR.HOR_WALL;
+  *(*write_head)++ = BOX_CHAR.CORNER;
   *(*write_head)++ = NEW_LINE;
 
   return EXIT_SUCCESS;
@@ -241,7 +204,7 @@ int body(size_t width, const char **input_buffer, char **write_head) {
 
   while (*reader) {
     if (col_count == 0) {
-      *(*write_head)++ = VERTICAL_WALLS;
+      *(*write_head)++ = BOX_CHAR.VERT_WALL;
       *(*write_head)++ = ' ';
     }
 
@@ -250,7 +213,7 @@ int body(size_t width, const char **input_buffer, char **write_head) {
       for (; col_count < width; col_count++)
         *(*write_head)++ = ' ';
 
-      *(*write_head)++ = VERTICAL_WALLS;
+      *(*write_head)++ = BOX_CHAR.VERT_WALL;
       *(*write_head)++ = NEW_LINE;
       col_count = 0;
       reader++;
@@ -264,9 +227,10 @@ int body(size_t width, const char **input_buffer, char **write_head) {
   if (col_count > 0) {
     for (; col_count < width; col_count++)
       *(*write_head)++ = ' ';
-    *(*write_head)++ = VERTICAL_WALLS;
+    *(*write_head)++ = BOX_CHAR.VERT_WALL;
     *(*write_head)++ = NEW_LINE;
   }
 
   return EXIT_SUCCESS;
 }
+
