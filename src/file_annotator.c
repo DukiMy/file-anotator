@@ -19,12 +19,6 @@
 #define NEW_LINE '\n'
 #define NULL_TERM '\0'
 
-// TODO: Rename and make it take FILE filestreams.
-typedef struct IO_file_path {
-  char *input_file_path;
-  char *output_file_path;
-} IO_file_path;
-
 typedef struct IO_filestream {
   FILE *input_fs;
   FILE *output_fs;
@@ -50,6 +44,7 @@ int horizontal_border(size_t width, char **write_head);
 int body(size_t width, const char **input_buffer, char **write_head);
 char *boxed_text(const char *input_buffer, size_t *fsize);
 int prepend(const char *filepath, const char *prepend_text);
+// TODO: Rename this into something more fitting
 void assign_file_path(int argc,  char *argv[], IO_filestream *fs);
 int main(int argc, char *argv[]);
 
