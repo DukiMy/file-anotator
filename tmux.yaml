@@ -15,7 +15,7 @@ windows:
           - tmux resize-pane -t  file_annotator:0.1 -y 10
           - tmux set-option -t file_annotator status-style "bg=#262626,fg=#b2b2b2"
           # Clears the output file from previous runs and recompiles the program
-          - echo "" >> ./test-files/output.txt && gcc -g ./src/file_annotator.c -o ./bin/file_annotator.out
+          - echo "" > ./test-files/output.txt && gcc -g ./src/file_annotator.c -o ./bin/file_annotator.out
       # Debug terminal (GDB)
       - shell_command:
           - echo "pane 3 Debug terminal"
