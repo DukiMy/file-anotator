@@ -5,7 +5,7 @@
  * @date 2025-07-26
  *
  * This file implements the main logic for reading, modifying,
- * and writing annotated text files.
+ * and writing .
  */
 
 /* Imports */
@@ -19,6 +19,7 @@
 #define NEW_LINE '\n'
 #define NULL_TERM '\0'
 
+// TODO: Rename and make it take FILE filestreams.
 typedef struct IO_file_path {
   char *input_file_path;
   char *output_file_path;
@@ -42,14 +43,14 @@ int horizontal_border(size_t width, char **write_head);
 int body(size_t width, const char **input_buffer, char **write_head);
 char *boxed_text(const char *input_buffer, size_t *fsize);
 int prepend(const char *filepath, const char *prepend_text);
+// TODO: Change sign so that it takes a filestream struct
 int box_from_file(IO_file_path *file_path);
 void assign_file_path(int argc,  char *argv[], IO_file_path *file_path);
 int main(int argc, char *argv[]);
 
-
-
 /* The programs main entry point */
 int main(int argc, char *argv[]) {
+  // TODO: Make it take filestreams
   IO_file_path file_path = {
     .input_file_path = "null",
     .output_file_path = "null"
@@ -86,6 +87,7 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
           );
           exit(EXIT_FAILURE);
         }
+        // TODO: Use path to add a filestream to filestream struct
         file_path->input_file_path = optarg;
         break;
 
@@ -106,6 +108,7 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
           );
           exit(EXIT_FAILURE);
         }
+        // TODO: Use path to add a filestream to filestream struct
         file_path->output_file_path = optarg;
         break;
 
@@ -125,8 +128,9 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
     }
   }
 }
-
+// TODO: Change sign so that it takes a filestream struct
 int box_from_file(IO_file_path *file_path) {
+  // TODO: File stream is assigned at the switch above.
   FILE *input_stream = fopen(file_path->input_file_path, "rb");
   fseek(input_stream, 0, SEEK_END);
   size_t fsize = ftell(input_stream);
@@ -140,6 +144,7 @@ int box_from_file(IO_file_path *file_path) {
   char *boxed_text_buffer = boxed_text(input_buffer, &fsize);
   free(input_buffer);
 
+  // TODO: File stream is assigned at the switch above.
   FILE *output_stream = fopen(file_path->output_file_path, "wb");
   fwrite(boxed_text_buffer, 1, fsize, output_stream);
   fclose(output_stream);
