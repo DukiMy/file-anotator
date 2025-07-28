@@ -41,8 +41,8 @@ static const box_char BOX_CHAR = {
 /* Declarting methods */
 int get_dims(const char *str, size_t *width, size_t *rows);
 int horizontal_border(size_t width, char **write_head);
-int body(size_t width, const char **input_buffer, char **write_head);
-char *boxed_text(const char *input_buffer, size_t *fsize);
+int body(size_t width, const char **working_buff, char **write_head);
+char *boxed_text(const char *working_buff, size_t *fsize);
 int prepend(const char *filepath, const char *prepend_text);
 // TODO: Rename this into something more fitting
 void assign_file_path(int argc,  char *argv[], IO_filestream *fs);
@@ -91,16 +91,26 @@ void assign_file_path(const int argc, char *argv[], IO_filestream *fs) {
         }
 
         // TODO: Break out this operation
+        // Open the read-only filestream with the optarg filepath
         fs->input_fs = fopen(optarg, "rb");
+        // NOTE: fseek should only be used on files. data on random access, or use defined by stdin does not work with this.
+        // Go to the end of the filestream
         fseek(fs->input_fs, 0, SEEK_END);
+        // Tell the position of the pointer. Essentially tells the length of the filestream, because we traversed to its end previously. 
         size_t fsize = ftell(fs->input_fs);
+        // Sets the pointer back to the beginning of the filestream. This making it ready to be used.
         rewind(fs->input_fs);
-        char *input_buffer = malloc(fsize + 1);
-        fread(input_buffer, 1, fsize, fs->input_fs);
+        // Allocates memory
+        char *working_buff = malloc(fsize + 1);
+        // Stores the the data of the input filestream to the input buffer
+        fread(working_buff, 1, fsize, fs->input_fs);
+        // Input filestream is no longer needed, and therefore closed
         fclose(fs->input_fs);
-        input_buffer[fsize] = NULL_TERM;
-        char *boxed_text_buffer = boxed_text(input_buffer, &fsize);
-        free(input_buffer);
+        // Adds a null terminator to the end of the buffer
+        working_buff[fsize] = NULL_TERM;
+        // Stores the boxed text at the input buffer.
+        working_buff = boxed_text(working_buff, &fsize);
+        // free(working_buff);
       break;
 
       case 'o':
@@ -123,10 +133,14 @@ void assign_file_path(const int argc, char *argv[], IO_filestream *fs) {
         }
 
         // TODO: Break out this operation
+        // Open the filestream with the output path provided by optarg
         fs->output_fs = fopen(optarg, "wb");
-        fwrite(boxed_text_buffer, 1, fsize, fs->output_fs);
+        // Write the contents of the working buffer to the output stream
+        fwrite(working_buff, 1, fsize, fs->output_fs);
+        // Close the output stream
         fclose(fs->output_fs);
-        free(boxed_text_buffer);
+        // Free the memory buffer
+        free(working_buff);
 
       break;
 
@@ -147,17 +161,17 @@ void assign_file_path(const int argc, char *argv[], IO_filestream *fs) {
   }
 }
 
-char *boxed_text(const char *input_buffer, size_t *fsize) {
+char *boxed_text(const char *working_buff, size_t *fsize) {
   size_t width, rows;
 
-  get_dims(input_buffer, &width, &rows);
+  get_dims(working_buff, &width, &rows);
   *fsize = (width + 3) * (rows + 2) + 1;
 
   char *buffer = malloc(*fsize);
   char *write_head = buffer;
 
   horizontal_border(width, &write_head);
-  body(width, &input_buffer, &write_head);
+  body(width, &working_buff, &write_head);
   horizontal_border(width, &write_head);
 
   *write_head = NULL_TERM;
@@ -197,8 +211,8 @@ int horizontal_border(size_t width, char **write_head) {
   return EXIT_SUCCESS;
 }
 
-int body(size_t width, const char **input_buffer, char **write_head) {
-  const char *reader = *input_buffer;
+int body(size_t width, const char **working_buff, char **write_head) {
+  const char *reader = *working_buff;
   size_t col_count = 0;
 
   while (*reader) {
