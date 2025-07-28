@@ -25,6 +25,13 @@ typedef struct IO_file_path {
   char *output_file_path;
 } IO_file_path;
 
+typedef struct IO_filestream {
+  FILE *input_fs;
+  FILE *output_fs;
+  char *input_fp;
+  char *output_fp;
+} IO_filestream;
+
 typedef struct box_char {
   const char CORNER;
   const char VERT_WALL;
@@ -43,21 +50,19 @@ int horizontal_border(size_t width, char **write_head);
 int body(size_t width, const char **input_buffer, char **write_head);
 char *boxed_text(const char *input_buffer, size_t *fsize);
 int prepend(const char *filepath, const char *prepend_text);
-// TODO: Change sign so that it takes a filestream struct
-int box_from_file(IO_file_path *file_path);
-void assign_file_path(int argc,  char *argv[], IO_file_path *file_path);
+void assign_file_path(int argc,  char *argv[], IO_filestream *fs);
 int main(int argc, char *argv[]);
 
 /* The programs main entry point */
 int main(int argc, char *argv[]) {
-  // TODO: Make it take filestreams
-  IO_file_path file_path = {
-    .input_file_path = "null",
-    .output_file_path = "null"
+  IO_filestream fs = {
+    .input_fs = NULL,
+    .output_fs = NULL,
+    .input_fp = "null",
+    .output_fp = "null"
   };
 
-  assign_file_path(argc, argv, &file_path);
-  box_from_file(&file_path);
+  assign_file_path(argc, argv, &fs);
 
   return EXIT_SUCCESS;
 }
@@ -65,11 +70,12 @@ int main(int argc, char *argv[]) {
 /*
  * Checks for valid arguments, exits the program if it fails.
  */
-void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
+void assign_file_path(const int argc, char *argv[], IO_filestream *fs) {
   char opt;
-  while ((opt = getopt(argc, argv, "i:o:?:h")) != -1) {
 
+  while ((opt = getopt(argc, argv, "i:o:?:h")) != -1) {
     switch (opt) {
+
       case 'i':
         if (!optarg) {
           fprintf(
@@ -79,6 +85,7 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
           );
           exit(EXIT_FAILURE);
         }
+        
         if (access(optarg, F_OK) != 0) {
           fprintf(
             stderr,
@@ -87,9 +94,19 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
           );
           exit(EXIT_FAILURE);
         }
-        // TODO: Use path to add a filestream to filestream struct
-        file_path->input_file_path = optarg;
-        break;
+
+        // TODO: Break out this operation
+        fs->input_fs = fopen(optarg, "rb");
+        fseek(fs->input_fs, 0, SEEK_END);
+        size_t fsize = ftell(fs->input_fs);
+        rewind(fs->input_fs);
+        char *input_buffer = malloc(fsize + 1);
+        fread(input_buffer, 1, fsize, fs->input_fs);
+        fclose(fs->input_fs);
+        input_buffer[fsize] = NULL_TERM;
+        char *boxed_text_buffer = boxed_text(input_buffer, &fsize);
+        free(input_buffer);
+      break;
 
       case 'o':
         if (!optarg) {
@@ -100,6 +117,7 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
           );
           exit(EXIT_FAILURE);
         }
+
         if (access(optarg, F_OK) != 0) {
           fprintf(
             stderr,
@@ -108,15 +126,20 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
           );
           exit(EXIT_FAILURE);
         }
-        // TODO: Use path to add a filestream to filestream struct
-        file_path->output_file_path = optarg;
-        break;
+
+        // TODO: Break out this operation
+        fs->output_fs = fopen(optarg, "wb");
+        fwrite(boxed_text_buffer, 1, fsize, fs->output_fs);
+        fclose(fs->output_fs);
+        free(boxed_text_buffer);
+
+      break;
 
       case '?': case 'h':
         printf(
           "Usage:\n  ./file_anotator.out -i <input_file_path> -o <output_file_path>\n"
         );
-        exit(EXIT_SUCCESS);
+      exit(EXIT_SUCCESS);
 
       default:
         fprintf(
@@ -124,33 +147,9 @@ void assign_file_path(const int argc, char *argv[], IO_file_path *file_path) {
           "Argument '%s' was not recognized.\nUse flags '-h' or '-?'.",
           optarg
         );
-        exit(EXIT_FAILURE);
+      exit(EXIT_FAILURE);
     }
   }
-}
-// TODO: Change sign so that it takes a filestream struct
-int box_from_file(IO_file_path *file_path) {
-  // TODO: File stream is assigned at the switch above.
-  FILE *input_stream = fopen(file_path->input_file_path, "rb");
-  fseek(input_stream, 0, SEEK_END);
-  size_t fsize = ftell(input_stream);
-  rewind(input_stream);
-
-  char *input_buffer = malloc(fsize + 1);
-  fread(input_buffer, 1, fsize, input_stream);
-  fclose(input_stream);
-
-  input_buffer[fsize] = NULL_TERM;
-  char *boxed_text_buffer = boxed_text(input_buffer, &fsize);
-  free(input_buffer);
-
-  // TODO: File stream is assigned at the switch above.
-  FILE *output_stream = fopen(file_path->output_file_path, "wb");
-  fwrite(boxed_text_buffer, 1, fsize, output_stream);
-  fclose(output_stream);
-  free(boxed_text_buffer);
-
-  return EXIT_SUCCESS;
 }
 
 char *boxed_text(const char *input_buffer, size_t *fsize) {
