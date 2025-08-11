@@ -5,10 +5,11 @@
  * @date 2025-07-26
  *
  * This file implements the main logic for reading, modifying,
- * and writing .
+ * and writing.
  */
 
 /* Imports */
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -20,11 +21,17 @@
 #define NULL_TERM '\0'
 
 typedef struct IO_filestream {
-  FILE *input_fs;
-  FILE *output_fs;
-  char *input_fp;
-  char *output_fp;
+  FILE *infile;
+  FILE *outfile;
+  char *infile_path;
+  char *outfile_path;
 } IO_filestream;
+
+typedef struct Infile {
+  char *path;
+  uint8_t exists;
+  FILE stream;
+} Infile;
 
 typedef struct box_char {
   const char CORNER;
@@ -38,7 +45,7 @@ static const box_char BOX_CHAR = {
   '-'   /* HOR_WALL   */
 };
 
-/* Declarting methods */
+/* Declaring methods */
 int get_dims(const char *str, size_t *width, size_t *rows);
 int horizontal_border(size_t width, char **write_head);
 int body(size_t width, const char **working_buff, char **write_head);
@@ -51,15 +58,36 @@ int main(int argc, char *argv[]);
 /* The programs main entry point */
 int main(int argc, char *argv[]) {
   IO_filestream fs = {
-    .input_fs = NULL,
-    .output_fs = NULL,
-    .input_fp = "null",
-    .output_fp = "null"
+    .infile = NULL,
+    .outfile = NULL,
+    .infile_path = "null",
+    .outfile_path = "null"
   };
+
+  Infile input = {
+    .path = "change this",
+    .exists = 0x00,
+
+  }
 
   assign_file_path(argc, argv, &fs);
 
   return EXIT_SUCCESS;
+}
+
+char *get_path() {
+
+}
+
+FILE set_infile(const int argc, char *argv[]) {
+  char opt;
+  while ((opt = getopt(argc, argv, "i")) != -1) {
+    if (opt == 'i' && optarg && access(optarg, F_OK) == 0) {
+
+      
+      
+    }
+  }
 }
 
 /*
@@ -92,20 +120,20 @@ void assign_file_path(const int argc, char *argv[], IO_filestream *fs) {
 
         // TODO: Break out this operation
         // Open the read-only filestream with the optarg filepath
-        fs->input_fs = fopen(optarg, "rb");
+        fs->infile = fopen(optarg, "rb");
         // NOTE: fseek should only be used on files. data on random access, or use defined by stdin does not work with this.
         // Go to the end of the filestream
-        fseek(fs->input_fs, 0, SEEK_END);
+        fseek(fs->infile, 0, SEEK_END);
         // Tell the position of the pointer. Essentially tells the length of the filestream, because we traversed to its end previously. 
-        size_t fsize = ftell(fs->input_fs);
+        size_t fsize = ftell(fs->infile);
         // Sets the pointer back to the beginning of the filestream. This making it ready to be used.
-        rewind(fs->input_fs);
+        rewind(fs->infile);
         // Allocates memory
         char *working_buff = malloc(fsize + 1);
         // Stores the the data of the input filestream to the input buffer
-        fread(working_buff, 1, fsize, fs->input_fs);
+        fread(working_buff, 1, fsize, fs->infile);
         // Input filestream is no longer needed, and therefore closed
-        fclose(fs->input_fs);
+        fclose(fs->infile);
         // Adds a null terminator to the end of the buffer
         working_buff[fsize] = NULL_TERM;
         // Stores the boxed text at the input buffer.
@@ -134,11 +162,11 @@ void assign_file_path(const int argc, char *argv[], IO_filestream *fs) {
 
         // TODO: Break out this operation
         // Open the filestream with the output path provided by optarg
-        fs->output_fs = fopen(optarg, "wb");
+        fs->outfile = fopen(optarg, "wb");
         // Write the contents of the working buffer to the output stream
-        fwrite(working_buff, 1, fsize, fs->output_fs);
+        fwrite(working_buff, 1, fsize, fs->outfile);
         // Close the output stream
-        fclose(fs->output_fs);
+        fclose(fs->outfile);
         // Free the memory buffer
         free(working_buff);
 
